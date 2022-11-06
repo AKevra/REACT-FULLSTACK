@@ -10,19 +10,35 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 function App() {
-  const [authState, setAuthState] = useState(false);
-  useEffect(() =>{
-    axios.get('http://localhost:3001/auth/auth', {
-      headers: {
-        accessToken: localStorage.getItem('accessToken'),
-      }
-    }).then((response) => {
-      if(response.data.error) {setAuthState(false);
-      }else {
-        setAuthState(true);
-      }
-    })
-  }, [])
+  const [authState, setAuthState] = useState({
+    username: "",
+    id: 0,
+    status: false,
+  });
+  useEffect(() => {
+    axios
+      .get("http://localhost:3001/auth/auth", {
+        headers: {
+          accessToken: localStorage.getItem("accessToken"),
+        },
+      })
+      .then((response) => {
+        if (response.data.error) {
+          setAuthState({ ...authState, status: false });
+        } else {
+          setAuthState({
+            username: response.data.username,
+            id: response.data.id,
+            status: true,
+          });
+        }
+      });
+  }, [authState]);
+
+  const logout = () => {
+    localStorage.removeItem("accessToken");
+    setAuthState({ username: "", id: 0, status: false });
+  };
   return (
     <div className="App">
       <AuthContext.Provider value={{authState,setAuthState}} >
@@ -30,11 +46,16 @@ function App() {
           <div className="navbar">
             <Link to="/"> Home Page</Link>
             <Link to="/createpost"> Create A Post</Link>
-            {!authState && (
+            {!authState.status ? (
                 <>
                   <Link to="/login"> Login</Link>
                   <Link to="/registration"> Registration</Link>
                 </>
+              ):(
+              <div className="loggedInContainer">
+                <h1>{authState.username} </h1>
+                {authState.status && <button onClick={logout}> Logout</button>}
+              </div>
               )}
           </div>
           <Routes>
